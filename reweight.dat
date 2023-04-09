@@ -1,0 +1,23 @@
+# set up two variables for Phi and Psi dihedral angles 
+phi: TORSION ATOMS=5,7,9,15
+psi: TORSION ATOMS=7,9,15,17
+#
+# Activate metadynamics in phi and psi
+# depositing a Gaussian every 500 time steps,
+# with height equal to 1.2 kJoule/mol,
+# and width 0.35 rad for both CVs. 
+#
+metad: METAD ARG=phi PACE=10000000 HEIGHT=0 SIGMA=0.35 FILE=HILLS GRID_MIN=-pi GRID_MAX=pi RESTART=YES
+
+# monitor the two variables and the metadynamics bias potential
+PRINT STRIDE=1 ARG=phi,psi,metad.bias FILE=COLVAR
+
+as: REWEIGHT_BIAS ARG=metad.bias
+
+hhphi: HISTOGRAM ARG=phi STRIDE=50 GRID_MIN=-pi GRID_MAX=pi GRID_BIN=256 BANDWIDTH=0.1 LOGWEIGHTS=as
+hhpsi: HISTOGRAM ARG=psi STRIDE=50 GRID_MIN=-pi GRID_MAX=pi GRID_BIN=256 BANDWIDTH=0.1 LOGWEIGHTS=as
+ffphi: CONVERT_TO_FES GRID=hhphi
+ffpsi: CONVERT_TO_FES GRID=hhpsi
+
+DUMPGRID GRID=ffphi FILE=ffphi.dat
+DUMPGRID GRID=ffpsi FILE=ffpsi.dat
